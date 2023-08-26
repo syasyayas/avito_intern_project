@@ -2,11 +2,12 @@ package app
 
 import (
 	"avito_project/config"
-	"avito_project/internal/db/postgres/postgres"
+	"avito_project/internal/repository/postgres/postgres/db"
 	"context"
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
@@ -29,27 +30,31 @@ func Run(cfgPath string) error {
 	defer cancel()
 	log.Info("Setting up postgres connection")
 
-	_, err = postgres.NewPgPool(ctx, log, cfg)
+	_, err = db.NewPgPool(ctx, log, cfg)
 	if err != nil {
 		return fmt.Errorf("Failed to establish postgres connection: %v", err)
 	}
 
 	log.Info("Setting up repositories")
 
-	log.Info("Setting up services")
+	userRepo :=
+		log.Info("Setting up services")
 
 	log.Info("Setting up handlers")
 
+	wg := &sync.WaitGroup{}
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
+	wg.Add(1)
 	go func() {
 		s := <-sigChan
 		log.Infof("Recived signal %v", s)
 		log.Info("Initializing gracefull shutdown")
 		cancel()
 
+		wg.Done()
 	}()
+	wg.Wait()
 	return nil
 }
 

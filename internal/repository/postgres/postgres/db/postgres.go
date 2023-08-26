@@ -1,4 +1,4 @@
-package postgres
+package db
 
 import (
 	"avito_project/config"

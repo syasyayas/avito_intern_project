@@ -15,7 +15,7 @@ type Config struct {
 
 type (
 	App struct {
-		Name    string `env-required:"false" yaml:"Name"`
+		Name    string `env-required:"false" yaml:"name"`
 		Version string `env-required:"true" yaml:"version"`
 	}
 
@@ -34,6 +34,7 @@ type (
 
 func New(cfgPath string) (*Config, error) {
 	cfg := &Config{}
+	fmt.Println(cfgPath)
 	err := cleanenv.ReadConfig(cfgPath, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("Couldnt parse coonfig: %v", err)

@@ -1,0 +1,35 @@
+version: '3.1'
+
+services:
+  app:
+    build: .
+    platform: linux/amd64
+    ports: 
+      - "80:80"
+    restart: unless-stopped
+    env_file:
+        - ./dev.env
+    networks: 
+      - app
+    depends_on:
+      - postgres
+
+
+  postgres:
+    image: postgres:latest
+    ports: 
+      - "5432:5432"
+    env_file:
+        - ./dev.env
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./scripts/sql/:/docker-entrypoint-initdb.d/
+
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  pg-data:
+    driver: local
