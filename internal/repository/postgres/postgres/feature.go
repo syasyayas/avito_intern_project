@@ -50,7 +50,7 @@ func (r *FeatureRepo) getIdBySlug(ctx context.Context, slug string) (int, error)
 
 // AddFeaturesToUser inserts feature to user relations
 // execution fails if provided feature does not exist or the expiration date is invalid
-func (r *FeatureRepo) AddFeaturesToUser(ctx context.Context, userId string, features []*model.Feature) error {
+func (r *FeatureRepo) AddFeaturesToUser(ctx context.Context, userId string, features []model.Feature) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return repository.PgErrorWrapper(err)
@@ -86,9 +86,9 @@ func (r *FeatureRepo) AddFeaturesToUser(ctx context.Context, userId string, feat
 	return repository.PgErrorWrapper(tx.Commit(ctx))
 }
 
-// DeleteFeaturesFromUser deleted feature to user relation
+// DeleteFeaturesFromUser deletes feature to user relation
 // execution fails if one of features does not exist but does not if user-feature relation does not exist
-func (r *FeatureRepo) DeleteFeaturesFromUser(ctx context.Context, userId string, features []*model.Feature) error {
+func (r *FeatureRepo) DeleteFeaturesFromUser(ctx context.Context, userId string, features []model.Feature) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return repository.PgErrorWrapper(err)
@@ -109,6 +109,13 @@ func (r *FeatureRepo) DeleteFeaturesFromUser(ctx context.Context, userId string,
 	}
 
 	return repository.PgErrorWrapper(tx.Commit(ctx))
+}
+
+func (r *FeatureRepo) DeleteFeatureFromUser(ctx context.Context, userID string, featureID int) error {
+	r.log.Debugf("Deleting relation userID: %s, featureID: %d", userID, featureID)
+
+	_, err := r.db.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_id = $2", userID, featureID)
+	return repository.PgErrorWrapper(err)
 }
 
 func (r *FeatureRepo) GetUserWithFeatures(ctx context.Context, id string) (*model.User, error) {
@@ -147,32 +154,4 @@ func (r *FeatureRepo) GetUserWithFeatures(ctx context.Context, id string) (*mode
 
 	}
 	return user, nil
-}
-
-func (r *FeatureRepo) GetHistory(ctx context.Context, after time.Time, before time.Time) ([]model.History, error) {
-	r.log.Debugf("Getting history between %s and %s", before.String(), after.String())
-
-	rows, err := r.db.Query(ctx, "SELECT user_id, feature_id, opeartion, date FROM avito_features.history WHERE date BETWEEN $1 AND $2", after, before)
-	if err != nil {
-		return nil, repository.PgErrorWrapper(err)
-	}
-
-	var res []model.History
-
-	for rows.Next() {
-		hist := model.History{}
-		err := rows.Scan(&hist.UserID, &hist.FeatureID, &hist.Operation, &hist.Date)
-		if err != nil {
-			return nil, repository.PgErrorWrapper(err)
-		}
-		res = append(res, hist)
-	}
-	return res, nil
-}
-
-func (r *FeatureRepo) DeleteFeatureFromUser(ctx context.Context, userID string, featureID int) error {
-	r.log.Debugf("Deleting relation userID: %s, featureID: %d", userID, featureID)
-
-	_, err := r.db.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_id = $2", userID, featureID)
-	return repository.PgErrorWrapper(err)
 }

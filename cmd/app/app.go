@@ -2,7 +2,9 @@ package app
 
 import (
 	"avito_project/config"
+	"avito_project/internal/repository"
 	"avito_project/internal/repository/postgres/postgres/db"
+	"avito_project/internal/service"
 	"context"
 	"fmt"
 	"os"
@@ -30,15 +32,17 @@ func Run(cfgPath string) error {
 	defer cancel()
 	log.Info("Setting up postgres connection")
 
-	_, err = db.NewPgPool(ctx, log, cfg)
+	pool, err := db.NewPgPool(ctx, log, cfg)
 	if err != nil {
 		return fmt.Errorf("Failed to establish postgres connection: %v", err)
 	}
 
 	log.Info("Setting up repositories")
+	repos := repository.NewPgRepos(pool, log)
 
-	userRepo :=
-		log.Info("Setting up services")
+	log.Info("Setting up services")
+
+	services := service.NewServices(repos, log)
 
 	log.Info("Setting up handlers")
 
@@ -49,7 +53,7 @@ func Run(cfgPath string) error {
 	go func() {
 		s := <-sigChan
 		log.Infof("Recived signal %v", s)
-		log.Info("Initializing gracefull shutdown")
+		log.Info("Initializing graceful shutdown")
 		cancel()
 
 		wg.Done()

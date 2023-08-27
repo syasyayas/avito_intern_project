@@ -36,6 +36,7 @@ func (r *UserRepo) DeleteUser(ctx context.Context, id string) error {
 	return repository.PgErrorWrapper(err)
 }
 
+// TODO delete?
 func (r *UserRepo) GetUser(ctx context.Context, id string) (*model.User, error) {
 	var user = &model.User{}
 	row := r.db.QueryRow(ctx, "SELECT id FROM avito_features.users WHERE id = ? AND deleted_at IS NOT NULL", id)
