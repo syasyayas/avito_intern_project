@@ -12,18 +12,18 @@ type Saver interface {
 	Save(ctx context.Context, data [][]string) (string, error)
 }
 
-type History struct {
+type HistoryService struct {
 	repos *repository.RepoContainer
 	saver Saver
 
 	log *logrus.Logger
 }
 
-func NewHistoryService(repos *repository.RepoContainer, log *logrus.Logger) *History {
-	return &History{repos: repos, log: log}
+func NewHistoryService(repos *repository.RepoContainer, saver Saver, log *logrus.Logger) *HistoryService {
+	return &HistoryService{repos: repos, saver: saver, log: log}
 }
 
-func (s *History) GetHistory(ctx context.Context, after time.Time, before time.Time) (model.History, error) {
+func (s *HistoryService) GetHistory(ctx context.Context, after time.Time, before time.Time) (model.History, error) {
 	hist, err := s.repos.GetHistory(ctx, after, before)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (s *History) GetHistory(ctx context.Context, after time.Time, before time.T
 
 }
 
-func (s *History) Export(ctx context.Context, after time.Time, before time.Time) (string, error) {
+func (s *HistoryService) Export(ctx context.Context, after time.Time, before time.Time) (string, error) {
 	data, err := s.GetHistory(ctx, after, before)
 	if err != nil {
 		return "", err

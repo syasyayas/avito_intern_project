@@ -5,6 +5,7 @@ import (
 	"avito_project/internal/repository"
 	"context"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type Feature interface {
@@ -20,14 +21,21 @@ type User interface {
 	GetUserWithFeatures(ctx context.Context, user *model.User) (*model.User, error)
 }
 
+type History interface {
+	GetHistory(ctx context.Context, after time.Time, before time.Time) (model.History, error)
+	Export(ctx context.Context, after time.Time, before time.Time) (string, error)
+}
+
 type Services struct {
 	Feature
 	User
+	History
 }
 
-func NewServices(repos *repository.RepoContainer, logger *logrus.Logger) *Services {
+func NewServices(repos *repository.RepoContainer, saver Saver, logger *logrus.Logger) *Services {
 	return &Services{
 		User:    NewUserService(repos, logger),
 		Feature: NewFeatureService(repos, logger),
+		History: NewHistoryService(repos, saver, logger),
 	}
 }

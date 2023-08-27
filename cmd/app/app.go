@@ -5,6 +5,7 @@ import (
 	"avito_project/internal/repository"
 	"avito_project/internal/repository/postgres/postgres/db"
 	"avito_project/internal/service"
+	saver2 "avito_project/internal/service/saver"
 	"context"
 	"fmt"
 	"os"
@@ -40,9 +41,14 @@ func Run(cfgPath string) error {
 	log.Info("Setting up repositories")
 	repos := repository.NewPgRepos(pool, log)
 
+	saver, err := saver2.NewGDriveSaver("", log)
+	if err != nil {
+		panic(err)
+	}
+
 	log.Info("Setting up services")
 
-	services := service.NewServices(repos, log)
+	services := service.NewServices(repos, saver, log)
 
 	log.Info("Setting up handlers")
 
