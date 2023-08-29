@@ -2,21 +2,28 @@ package app
 
 import (
 	"avito_project/config"
+	"avito_project/internal/controller"
 	"avito_project/internal/repository"
 	"avito_project/internal/repository/postgres/postgres/db"
 	"avito_project/internal/service"
 	saver2 "avito_project/internal/service/saver"
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
 )
 
 const logDefaultLevel = "debug"
+
+//TODO validators?
+//TODO оформление + вопросы + красивые схемы и картинки
+//TODO нужно ли совсем удалять сегмент?
+//TODO процент пользователей в сегмент
+//TODO swagger
 
 func Run(cfgPath string) error {
 	cfg, err := config.New(cfgPath)
@@ -41,7 +48,7 @@ func Run(cfgPath string) error {
 	log.Info("Setting up repositories")
 	repos := repository.NewPgRepos(pool, log)
 
-	saver, err := saver2.NewGDriveSaver("", log)
+	saver := saver2.NewLocalSaver(log, cfg.Http.Port)
 	if err != nil {
 		panic(err)
 	}
@@ -51,20 +58,28 @@ func Run(cfgPath string) error {
 	services := service.NewServices(repos, saver, log)
 
 	log.Info("Setting up handlers")
+	e := echo.New()
 
-	wg := &sync.WaitGroup{}
+	controller.NewRouter(e, services)
+
+	go func() {
+		err = e.Start(fmt.Sprintf("0.0.0.0:%d", cfg.Http.Port))
+		if err != nil {
+			log.Info("Failed starting server")
+			panic(err)
+		}
+	}()
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	wg.Add(1)
-	go func() {
+	func() {
 		s := <-sigChan
 		log.Infof("Recived signal %v", s)
 		log.Info("Initializing graceful shutdown")
 		cancel()
+		_ = e.Shutdown(context.TODO())
 
-		wg.Done()
 	}()
-	wg.Wait()
 	return nil
 }
 

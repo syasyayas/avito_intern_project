@@ -3,7 +3,9 @@ package service
 import (
 	"avito_project/internal/model"
 	"avito_project/internal/repository"
+	"avito_project/internal/repository/repoerr"
 	"context"
+	"errors"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -26,6 +28,9 @@ func NewHistoryService(repos *repository.RepoContainer, saver Saver, log *logrus
 func (s *HistoryService) GetHistory(ctx context.Context, after time.Time, before time.Time) (model.History, error) {
 	hist, err := s.repos.GetHistory(ctx, after, before)
 	if err != nil {
+		if errors.Is(err, repoerr.ErrNotFound) {
+			return nil, ErrHistoryEmpty
+		}
 		return nil, err
 	}
 	return hist, nil

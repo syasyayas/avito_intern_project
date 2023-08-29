@@ -3,6 +3,7 @@ package service
 import (
 	"avito_project/internal/model"
 	"avito_project/internal/repository"
+	"avito_project/internal/repository/repoerr"
 	"context"
 	"errors"
 	"github.com/sirupsen/logrus"
@@ -21,19 +22,25 @@ func NewFeatureService(r *repository.RepoContainer, l *logrus.Logger) *FeatureSe
 	}
 }
 
-func (s *FeatureService) AddFeature(ctx context.Context, feature *model.Feature) (*model.Feature, error) {
+func (s *FeatureService) AddFeature(ctx context.Context, feature *model.Feature) error {
 	if feature == nil || feature.Slug == "" {
-		return nil, ErrFeatureEmpty
+		return ErrFeatureEmpty
 	}
-	var err error
-	feature.ID, err = s.repo.AddFeature(ctx, feature.Slug)
+	err := s.repo.AddFeature(ctx, feature.Slug)
 	if err != nil {
-		if errors.Is(err, repository.ErrAlreadyExists) {
-			return nil, ErrFeatureAlreadyExists
+		if errors.Is(err, repoerr.ErrAlreadyExists) {
+			return ErrFeatureAlreadyExists
 		}
-		return nil, err
+		return err
 	}
-	return feature, nil
+	return nil
+}
+
+func (s *FeatureService) AddFeaturePercent(ctx context.Context, feature *model.Feature, percent float64) error {
+	if feature == nil || feature.Slug == "" {
+		return ErrFeatureEmpty
+	}
+	return nil
 }
 
 func (s *FeatureService) DeleteFeature(ctx context.Context, feature *model.Feature) error {
@@ -41,7 +48,7 @@ func (s *FeatureService) DeleteFeature(ctx context.Context, feature *model.Featu
 		return ErrFeatureEmpty
 	}
 	if err := s.repo.DeleteFeature(ctx, feature.Slug); err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoerr.ErrNotFound) {
 			return ErrFeatureNotFound
 		}
 		return err
@@ -52,39 +59,38 @@ func (s *FeatureService) DeleteFeature(ctx context.Context, feature *model.Featu
 func (s *FeatureService) AddFeaturesToUser(ctx context.Context, user *model.User, features []model.Feature) error {
 	_, err := s.repo.GetUser(ctx, user.ID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoerr.ErrNotFound) {
 			return ErrUserNotFound
 		}
 		return err
 	}
 	err = s.repo.AddFeaturesToUser(ctx, user.ID, features)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoerr.ErrNotFound) {
 			return ErrFeatureNotFound
 		}
-		if errors.Is(err, repository.ErrInvalidExpiresAt) {
+		if errors.Is(err, repoerr.ErrInvalidExpiresAt) {
 			return ErrFeatureInvalid
 		}
 	}
 	return nil
 }
 
-func (s *FeatureService) DeleteFeatureFromUser(ctx context.Context, feature model.Feature, user model.User) error {
-	return nil
-}
-
-func (s *FeatureService) DeleteFeaturesFromUser(ctx context.Context, features []model.Feature, user model.User) error {
+func (s *FeatureService) DeleteFeaturesFromUser(ctx context.Context, features []model.Feature, user *model.User) error {
 	_, err := s.repo.GetUser(ctx, user.ID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoerr.ErrNotFound) {
 			return ErrUserNotFound
 		}
 		return err
 	}
-	err = s.repo.DeleteFeaturesFromUser(ctx, user.ID, features)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return ErrFeatureNotFound
+	for _, feature := range features {
+		err = s.repo.DeleteFeatureFromUser(ctx, user.ID, feature.Slug)
+		if err != nil {
+			if errors.Is(err, repoerr.ErrNotFound) {
+				continue
+			}
+			return err
 		}
 	}
 	return nil

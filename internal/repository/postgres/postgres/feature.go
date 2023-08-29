@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"avito_project/internal/model"
-	"avito_project/internal/repository"
+	"avito_project/internal/repository/repoerr"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,32 +20,21 @@ func NewFeatureRepo(db *pgxpool.Pool, log *logrus.Logger) *FeatureRepo {
 	return &FeatureRepo{db, log}
 }
 
-func (r *FeatureRepo) AddFeature(ctx context.Context, slug string) (int, error) {
+func (r *FeatureRepo) AddFeature(ctx context.Context, slug string) error {
 	r.log.Debugf("Adding feature %s", slug)
 
-	var id int
-	row := r.db.QueryRow(ctx, "INSERT INTO features (slug) VALUES ($1) RETURNING id", slug)
-	err := row.Scan(&id)
+	_, err := r.db.Exec(ctx, "INSERT INTO avito_features.features (slug) VALUES ($1)", slug)
 
-	return id, repository.PgErrorWrapper(err)
+	return repoerr.PgErrorWrapper(err)
 
 }
 
 func (r *FeatureRepo) DeleteFeature(ctx context.Context, slug string) error {
 	r.log.Debugf("Deleting feature %s", slug)
 
-	_, err := r.db.Exec(ctx, "UPDATE features SET deleted_at = now() WHERE slug = $1", slug)
+	_, err := r.db.Exec(ctx, "DELETE FROM avito_features.features WHERE slug = $1", slug)
 
-	return repository.PgErrorWrapper(err)
-}
-
-func (r *FeatureRepo) getIdBySlug(ctx context.Context, slug string) (int, error) {
-	var id int
-
-	row := r.db.QueryRow(ctx, "SELECT id form avito_features.features WHERE slug = $1 AND deleted_at IS NULL", slug)
-	err := row.Scan(&id)
-
-	return id, repository.PgErrorWrapper(err)
+	return repoerr.PgErrorWrapper(err)
 }
 
 // AddFeaturesToUser inserts feature to user relations
@@ -53,37 +42,40 @@ func (r *FeatureRepo) getIdBySlug(ctx context.Context, slug string) (int, error)
 func (r *FeatureRepo) AddFeaturesToUser(ctx context.Context, userId string, features []model.Feature) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return repository.PgErrorWrapper(err)
+		return repoerr.PgErrorWrapper(err)
 	}
 	defer tx.Rollback(ctx)
 
 	for _, feature := range features {
 		r.log.Debugf("adding feature %v to user %s", feature, userId)
+		if err != nil {
+			return repoerr.PgErrorWrapper(err)
+		}
 		if !feature.ExpiresAt.IsZero() {
 
 			if feature.ExpiresAt.Before(time.Now()) {
-				return repository.ErrInvalidExpiresAt
+				return repoerr.ErrInvalidExpiresAt
 			}
 
 			_, err := tx.Exec(ctx,
-				`INSERT INTO avito_features.user_feature (user_id, feature_id, expires_at) 
-					 VALUES ($1, (SELECT id FROM avito_features.features WHERE slug = $2), $3)`,
+				`INSERT INTO avito_features.user_feature (user_id, feature_slug, expires_at) 
+					 VALUES ($1, $2, $3)`,
 				userId, feature.Slug, feature.ExpiresAt)
 			if err != nil {
-				return repository.PgErrorWrapper(err)
+				return repoerr.PgErrorWrapper(err)
 			}
 		} else {
 			_, err := tx.Exec(ctx,
-				`INSERT INTO avito_features.user_feature (user_id, feature_id) 
-					 VALUES ($1, (SELECT id FROM avito_features.features WHERE slug = $2))`,
+				`INSERT INTO avito_features.user_feature (user_id, feature_slug) 
+					 VALUES ($1, $2)`,
 				userId, feature.Slug)
 			if err != nil {
-				return repository.PgErrorWrapper(err)
+				return repoerr.PgErrorWrapper(err)
 			}
 		}
 	}
 
-	return repository.PgErrorWrapper(tx.Commit(ctx))
+	return repoerr.PgErrorWrapper(tx.Commit(ctx))
 }
 
 // DeleteFeaturesFromUser deletes feature to user relation
@@ -91,61 +83,59 @@ func (r *FeatureRepo) AddFeaturesToUser(ctx context.Context, userId string, feat
 func (r *FeatureRepo) DeleteFeaturesFromUser(ctx context.Context, userId string, features []model.Feature) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return repository.PgErrorWrapper(err)
+		return repoerr.PgErrorWrapper(err)
 	}
 	defer tx.Rollback(ctx)
 
 	for _, feature := range features {
-		featureId, err := r.getIdBySlug(ctx, feature.Slug)
-		if errors.Is(err, repository.ErrNotFound) {
-			return err
-		}
 
-		_, err = tx.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_id = $2", userId, featureId)
+		_, err = tx.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_slug = $2", userId, feature.Slug)
 
-		if errors.Is(repository.PgErrorWrapper(err), repository.ErrNotFound) {
+		if errors.Is(repoerr.PgErrorWrapper(err), repoerr.ErrNotFound) {
 			continue
 		}
 	}
 
-	return repository.PgErrorWrapper(tx.Commit(ctx))
+	return repoerr.PgErrorWrapper(tx.Commit(ctx))
 }
 
-func (r *FeatureRepo) DeleteFeatureFromUser(ctx context.Context, userID string, featureID int) error {
-	r.log.Debugf("Deleting relation userID: %s, featureID: %d", userID, featureID)
+func (r *FeatureRepo) DeleteFeatureFromUser(ctx context.Context, userID string, featureSlug string) error {
+	r.log.Debugf("Deleting relation userID: %s, featureSLug: %s", userID, featureSlug)
 
-	_, err := r.db.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_id = $2", userID, featureID)
-	return repository.PgErrorWrapper(err)
+	_, err := r.db.Exec(ctx, "DELETE FROM avito_features.user_feature WHERE user_id = $1 AND feature_slug = $2", userID, featureSlug)
+	return repoerr.PgErrorWrapper(err)
 }
 
-func (r *FeatureRepo) GetUserWithFeatures(ctx context.Context, id string) (*model.User, error) {
-	r.log.Debugf("Retrieving info for user %s", id)
+func (r *FeatureRepo) GetUserWithFeatures(ctx context.Context, userId string) (*model.User, error) {
+	r.log.Debugf("Retrieving info for user %s", userId)
 
-	rows, err := r.db.Query(ctx, "SELECT uf.feature_id, f.slug, uf.expires_at FROM avito_features.user_feature uf JOIN avito_features.features f ON uf.feature_id = f.id WHERE uf.user_id = $1", id)
+	rows, err := r.db.Query(ctx, `SELECT uf.feature_slug, uf.expires_at FROM avito_features.user_feature uf WHERE uf.user_id = $1`,
+		userId)
 	if err != nil {
-		return nil, repository.PgErrorWrapper(err)
+		return nil, repoerr.PgErrorWrapper(err)
 	}
 	defer rows.Close()
 
-	var user = &model.User{ID: id}
-	for rows.Next() {
-		var featureId int
-		var slug string
-		var expiresAt time.Time
+	var user = &model.User{ID: userId}
 
-		err = rows.Scan(&featureId, &slug, &expiresAt)
+	for rows.Next() {
+		var slug string
+		var expiresAtPtr *time.Time
+		err = rows.Scan(&slug, &expiresAtPtr)
 		if err != nil {
 			return nil, err
 		}
-
 		feature := model.Feature{
-			ID:   featureId,
 			Slug: slug,
+		}
+		var expiresAt time.Time
+		if expiresAtPtr != nil {
+			expiresAt = *expiresAtPtr
 		}
 
 		if !expiresAt.IsZero() {
 			if expiresAt.Before(time.Now()) {
-				_ = r.DeleteFeatureFromUser(ctx, id, featureId)
+				_ = r.DeleteFeatureFromUser(ctx, userId, slug)
 				continue
 			}
 			feature.ExpiresAt = expiresAt

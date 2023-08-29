@@ -21,16 +21,20 @@ func NewPgPool(ctx context.Context, log *logrus.Logger, cfg *config.Config) (*pg
 
 	pgCfg, err := pgxpool.ParseConfig(cfg.Pg.URL)
 	pgCfg.MaxConns = PgPoolSize
+	log.Infof("Connecting: %s", cfg.Pg.URL)
 
 	for i := PgConnAttempts; i > 0; i-- {
 		pgPool, err = pgxpool.New(ctx, cfg.Pg.URL)
 		if err == nil {
-			log.Info("Established postgres connection")
+			err = pgPool.Ping(ctx)
+			if err != nil {
+				continue
+			}
 			return pgPool, nil
 		}
 		log.Infof("Failed to establish posgres connection, attempts left: %d", i-1)
 		time.Sleep(PgConnTimeout)
 	}
 
-	return pgPool, err
+	return nil, err
 }

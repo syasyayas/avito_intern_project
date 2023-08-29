@@ -9,15 +9,6 @@ import (
 	"time"
 )
 
-type FeatureRepo interface {
-	AddFeature(ctx context.Context, slug string) (int, error)
-	DeleteFeature(ctx context.Context, slug string) error
-	AddFeaturesToUser(ctx context.Context, userId string, features []model.Feature) error
-	DeleteFeaturesFromUser(ctx context.Context, userId string, features []model.Feature) error
-	GetUserWithFeatures(ctx context.Context, id string) (*model.User, error)
-	DeleteFeatureFromUser(ctx context.Context, userID string, featureID int) error
-}
-
 type UserRepo interface {
 	AddUser(ctx context.Context, id string) error
 	DeleteUser(ctx context.Context, id string) error
@@ -26,6 +17,14 @@ type UserRepo interface {
 
 type HistoryRepo interface {
 	GetHistory(ctx context.Context, after time.Time, before time.Time) (model.History, error)
+}
+type FeatureRepo interface {
+	AddFeature(ctx context.Context, slug string) error
+	DeleteFeature(ctx context.Context, slug string) error
+	AddFeaturesToUser(ctx context.Context, userId string, features []model.Feature) error
+	DeleteFeaturesFromUser(ctx context.Context, userId string, features []model.Feature) error
+	DeleteFeatureFromUser(ctx context.Context, userID string, featureSlug string) error
+	GetUserWithFeatures(ctx context.Context, userId string) (*model.User, error)
 }
 
 type RepoContainer struct {

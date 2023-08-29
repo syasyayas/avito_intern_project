@@ -7,11 +7,17 @@ import (
 )
 
 type Config struct {
-	App  `yaml:"app"`
-	Http `yaml:"http"`
-	Log  `yaml:"log"`
-	Pg   `yaml:"postgres"`
+	App   `yaml:"app"`
+	Http  `yaml:"http"`
+	Log   `yaml:"log"`
+	Pg    `yaml:"postgres"`
+	Saver `yaml:"saver"`
 }
+
+const (
+	SAVER_TYPE_GDRIVE = "gdrive"
+	SAVER_TYPE_LOCAL  = "local"
+)
 
 type (
 	App struct {
@@ -29,6 +35,11 @@ type (
 
 	Pg struct {
 		URL string `env-required:"true" env:"PG_URL" yaml:"url"`
+	}
+
+	Saver struct {
+		//Type   string `env-required:"true" env:"SAVER_TYPE" yaml:"type"`
+		//APIKey string `env-required:"false" env:"GDRIVE_API_KEY" yaml:"APIKey"`
 	}
 )
 

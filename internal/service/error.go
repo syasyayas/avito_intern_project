@@ -17,3 +17,7 @@ var (
 var (
 	ErrRelationAlreayExists = errors.New("user already has feature")
 )
+
+var (
+	ErrHistoryEmpty = errors.New("no history records for given time interval")
+)
