@@ -19,9 +19,12 @@ import (
 
 const logDefaultLevel = "debug"
 
-//TODO оформление + вопросы + красивые схемы и картинки
-//TODO нужно ли совсем удалять сегмент?
+// TODO схема бд в ридми + комменты
 // TODO empty user id fix
+// TODO refactor requests and responses
+// TODO test final
+// TODO приеры запросов в ридми
+// TODO autotests
 
 func Run(cfgPath string) error {
 	cfg, err := config.New(cfgPath)

@@ -3,6 +3,7 @@ package controller
 import (
 	"avito_project/internal/model"
 	"avito_project/internal/service"
+	"errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -29,14 +30,20 @@ func newUserRoutes(g *echo.Group, userService service.User) {
 // @Router /v1/user [post]
 func (r *userRoutes) NewUser(c echo.Context) error {
 	var u model.User
+
 	err := c.Bind(&u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+	if len(u.ID) == 0 {
+		return c.JSON(400, ErrorJson(errors.New("Empty user id")))
+	}
+
 	err = r.userService.AddUser(c.Request().Context(), &u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+
 	return c.NoContent(200)
 }
 
@@ -52,14 +59,17 @@ func (r *userRoutes) NewUser(c echo.Context) error {
 // @Router /v1/user [delete]
 func (r *userRoutes) DeleteUser(c echo.Context) error {
 	var u model.User
+
 	err := c.Bind(&u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+
 	err = r.userService.DeleteUser(c.Request().Context(), &u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+
 	return c.NoContent(200)
 }
 
@@ -74,10 +84,12 @@ func (r *userRoutes) DeleteUser(c echo.Context) error {
 // @Router /v1/user [get]
 func (r *userRoutes) GetUser(c echo.Context) error {
 	var u model.User
+
 	err := c.Bind(&u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+
 	res, err := r.userService.GetUserWithFeatures(c.Request().Context(), &u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
