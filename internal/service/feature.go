@@ -36,10 +36,28 @@ func (s *FeatureService) AddFeature(ctx context.Context, feature *model.Feature)
 	return nil
 }
 
-func (s *FeatureService) AddFeaturePercent(ctx context.Context, feature *model.Feature, percent float64) error {
-	if feature == nil || feature.Slug == "" {
+func (s *FeatureService) AddFeatureWithPercent(ctx context.Context, feature model.Feature) error {
+	if feature.Slug == "" {
 		return ErrFeatureEmpty
 	}
+
+	err := s.AddFeature(ctx, &feature)
+	if err != nil {
+		if errors.Is(err, repoerr.ErrAlreadyExists) {
+			return ErrFeatureAlreadyExists
+		}
+		return err
+	}
+
+	users, err := s.repo.GetRandomUsers(ctx, float64(*feature.Percent)/100.0)
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		_ = s.AddFeaturesToUser(ctx, &user, []model.Feature{feature})
+	}
+
 	return nil
 }
 

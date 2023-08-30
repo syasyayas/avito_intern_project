@@ -50,3 +50,32 @@ func (r *UserRepo) GetUser(ctx context.Context, id string) (*model.User, error) 
 	}
 	return user, nil
 }
+
+// pass float value between 0.0 and 1.0
+func (r *UserRepo) GetRandomUsers(ctx context.Context, percent float64) ([]model.User, error) {
+	var users []model.User
+	var count int
+
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM avito_features.users").Scan(&count)
+
+	r.log.Debugf("Got %d users", count)
+
+	if err != nil {
+		return nil, repoerr.PgErrorWrapper(err)
+	}
+
+	var amount = int(float64(count) * percent)
+
+	rows, err := r.db.Query(ctx, "SELECT id FROM avito_features.users ORDER BY RANDOM() LIMIT $1", amount)
+	for rows.Next() {
+		var userID string
+
+		err = rows.Scan(&userID)
+		if err != nil { // TODO maybe skip error
+			return nil, repoerr.PgErrorWrapper(err)
+		}
+
+		users = append(users, model.User{ID: userID})
+	}
+	return users, nil
+}

@@ -3,6 +3,7 @@ package controller
 import (
 	"avito_project/internal/model"
 	"avito_project/internal/service"
+	"errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,10 +26,22 @@ func (r *featureRoutes) NewFeature(c echo.Context) error {
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
-	err = r.featureService.AddFeature(c.Request().Context(), &f)
-	if err != nil {
-		return c.JSON(400, ErrorJson(err))
+	if f.Percent == nil {
+		err = r.featureService.AddFeature(c.Request().Context(), &f)
+
+		if err != nil {
+			return c.JSON(400, ErrorJson(err))
+		}
+	} else {
+		if *f.Percent < 0 || *f.Percent > 100 {
+			return c.JSON(400, ErrorJson(errors.New("invalid percent value")))
+		}
+		err = r.featureService.AddFeatureWithPercent(c.Request().Context(), f)
+		if err != nil {
+			return c.JSON(400, ErrorJson(err))
+		}
 	}
+
 	return c.NoContent(200)
 }
 

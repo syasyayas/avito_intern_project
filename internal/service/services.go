@@ -13,6 +13,7 @@ type Feature interface {
 	DeleteFeature(ctx context.Context, feature *model.Feature) error
 	AddFeaturesToUser(ctx context.Context, user *model.User, features []model.Feature) error
 	DeleteFeaturesFromUser(ctx context.Context, features []model.Feature, user *model.User) error
+	AddFeatureWithPercent(ctx context.Context, m model.Feature) error
 }
 type User interface {
 	AddUser(ctx context.Context, user *model.User) error

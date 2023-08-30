@@ -13,6 +13,7 @@ type UserRepo interface {
 	AddUser(ctx context.Context, id string) error
 	DeleteUser(ctx context.Context, id string) error
 	GetUser(ctx context.Context, id string) (*model.User, error)
+	GetRandomUsers(ctx context.Context, percent float64) ([]model.User, error)
 }
 
 type HistoryRepo interface {

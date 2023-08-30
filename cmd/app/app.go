@@ -19,11 +19,10 @@ import (
 
 const logDefaultLevel = "debug"
 
-//TODO validators?
 //TODO оформление + вопросы + красивые схемы и картинки
 //TODO нужно ли совсем удалять сегмент?
-//TODO процент пользователей в сегмент
 //TODO swagger
+// TODO empty user id fix
 
 func Run(cfgPath string) error {
 	cfg, err := config.New(cfgPath)
