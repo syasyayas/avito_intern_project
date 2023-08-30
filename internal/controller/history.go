@@ -18,6 +18,15 @@ func newHistoryRoutes(g *echo.Group, service service.History) {
 	g.GET("/export", r.export)
 }
 
+// @Summary Get history
+// @Description Retrieves history between to provided dates and returns csv file uri.
+// @Tags history
+// @Accept json
+// @Param feature body model.HistoryRequest true "dates"
+// @Produce json
+// @Success 200 {object} model.HistoryResponse
+// @Failure 400 {object} controller.Error
+// @Router /v1/history/export [get]
 func (r *historyRoutes) export(c echo.Context) error {
 	var req historyRequest
 	err := c.Bind(&req)

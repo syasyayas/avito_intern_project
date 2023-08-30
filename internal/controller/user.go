@@ -18,6 +18,15 @@ func newUserRoutes(g *echo.Group, userService service.User) {
 	g.GET("", r.GetUser)
 }
 
+// @Summary Create new user
+// @Description Creates new user in the database with provided id.
+// @Tags user
+// @Accept json
+// @Param feature body model.UserRequest true "user"
+// @Produce json
+// @Success 200
+// @Failure 400 {object} controller.Error
+// @Router /v1/user [post]
 func (r *userRoutes) NewUser(c echo.Context) error {
 	var u model.User
 	err := c.Bind(&u)
@@ -31,6 +40,16 @@ func (r *userRoutes) NewUser(c echo.Context) error {
 	return c.NoContent(200)
 }
 
+// @Summary Delete user
+// @Description Deletes user from database.
+// @Description All user-feature relations will also be deleted, but saved to history.
+// @Tags user
+// @Accept json
+// @Param feature body model.UserRequest true "user"
+// @Produce json
+// @Success 200
+// @Failure 400 {object} controller.Error
+// @Router /v1/user [delete]
 func (r *userRoutes) DeleteUser(c echo.Context) error {
 	var u model.User
 	err := c.Bind(&u)
@@ -44,6 +63,15 @@ func (r *userRoutes) DeleteUser(c echo.Context) error {
 	return c.NoContent(200)
 }
 
+// @Summary Get user
+// @Description Gets user from database with all of his currently active features.
+// @Tags user
+// @Accept json
+// @Param feature body model.UserRequest true "user"
+// @Produce json
+// @Success 200 {object} model.UserWithFeaturesResponse
+// @Failure 400 {object} controller.Error
+// @Router /v1/user [get]
 func (r *userRoutes) GetUser(c echo.Context) error {
 	var u model.User
 	err := c.Bind(&u)

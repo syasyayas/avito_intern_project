@@ -1,0 +1,283 @@
+definitions:
+  controller.Error:
+    properties:
+      error:
+        type: string
+    type: object
+  model.AddFeaturesToUserRequest:
+    properties:
+      features:
+        items:
+          $ref: '#/definitions/model.FeatureSlugAndExpire'
+        type: array
+      user_id:
+        type: string
+    type: object
+  model.DeleteFeatureRequest:
+    properties:
+      slug:
+        type: string
+    type: object
+  model.DeleteFeaturesFromUser:
+    properties:
+      features:
+        items:
+          $ref: '#/definitions/model.FeatureSlugOnly'
+        type: array
+      user_id:
+        type: string
+    type: object
+  model.FeatureSlugAndExpire:
+    properties:
+      expires_at:
+        type: string
+      slug:
+        type: string
+    type: object
+  model.FeatureSlugOnly:
+    properties:
+      slug:
+        type: string
+    type: object
+  model.HistoryRequest:
+    properties:
+      after:
+        type: string
+      before:
+        type: string
+    type: object
+  model.HistoryResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  model.NewFeatureRequest:
+    properties:
+      percent:
+        type: integer
+      slug:
+        type: string
+    type: object
+  model.UserRequest:
+    properties:
+      id:
+        type: string
+    type: object
+  model.UserWithFeaturesResponse:
+    properties:
+      features:
+        items:
+          $ref: '#/definitions/model.FeatureSlugAndExpire'
+        type: array
+      id:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/feature:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Deletes feature with provided slug from database.
+        All connecte user to feature bindings will also be deleted, but saved to the history to retrieve later.
+      parameters:
+      - description: feature
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeleteFeatureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Delete feature
+      tags:
+      - feature
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Creates new feature in the database with provided slug.
+        If "percent" value was provided, also binds new feature to given % of users
+      parameters:
+      - description: feature
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.NewFeatureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Create new feature
+      tags:
+      - feature
+  /v1/feature/features:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Deletes feature with provided slug from user, but doesn't delete the feature itself.
+        Deletions will be recorded in history.
+      parameters:
+      - description: User with features to delete
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeleteFeaturesFromUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Delete features from user
+      tags:
+      - feature
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Adds provided features to user.
+        The execution will fail if one of the features doesn't exist.
+        You may also provide expiration date for each feature individuall in format "2023-08-29T23:01:00Z".
+        Additions will be recorded to history.
+      parameters:
+      - description: User with features to add
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.AddFeaturesToUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Add features to user
+      tags:
+      - feature
+  /v1/history/export:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves history between to provided dates and returns csv file
+        uri.
+      parameters:
+      - description: dates
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.HistoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Get history
+      tags:
+      - history
+  /v1/user:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Deletes user from database.
+        All user-feature relations will also be deleted, but saved to history.
+      parameters:
+      - description: user
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Delete user
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Gets user from database with all of his currently active features.
+      parameters:
+      - description: user
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserWithFeaturesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Get user
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Creates new user in the database with provided id.
+      parameters:
+      - description: user
+        in: body
+        name: feature
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.Error'
+      summary: Create new user
+      tags:
+      - user
+swagger: "2.0"

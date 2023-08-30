@@ -21,7 +21,6 @@ const logDefaultLevel = "debug"
 
 //TODO оформление + вопросы + красивые схемы и картинки
 //TODO нужно ли совсем удалять сегмент?
-//TODO swagger
 // TODO empty user id fix
 
 func Run(cfgPath string) error {
