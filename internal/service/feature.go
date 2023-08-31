@@ -90,6 +90,7 @@ func (s *FeatureService) AddFeaturesToUser(ctx context.Context, user *model.User
 		if errors.Is(err, repoerr.ErrInvalidExpiresAt) {
 			return ErrFeatureInvalid
 		}
+		return err
 	}
 	return nil
 }
