@@ -17,8 +17,6 @@ func NewRouter(handler *echo.Echo, services *service.Services) {
 	handler.GET("/swagger/*", echoSwagger.WrapHandler)
 	handler.Static("/static", "")
 
-	// TODO swagger
-
 	v1 := handler.Group("/v1")
 	{
 		newFeatureRoutes(v1.Group("/feature"), services.Feature)
