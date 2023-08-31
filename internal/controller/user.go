@@ -36,7 +36,7 @@ func (r *userRoutes) NewUser(c echo.Context) error {
 		return c.JSON(400, ErrorJson(err))
 	}
 	if len(u.ID) == 0 {
-		return c.JSON(400, ErrorJson(errors.New("Empty user id")))
+		return c.JSON(400, ErrorJson(errors.New("empty user id")))
 	}
 
 	err = r.userService.AddUser(c.Request().Context(), &u)
@@ -64,6 +64,9 @@ func (r *userRoutes) DeleteUser(c echo.Context) error {
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
+	if len(u.ID) == 0 {
+		return c.JSON(400, ErrorJson(errors.New("empty user id")))
+	}
 
 	err = r.userService.DeleteUser(c.Request().Context(), &u)
 	if err != nil {
@@ -88,14 +91,26 @@ func (r *userRoutes) GetUser(c echo.Context) error {
 	err := c.Bind(&u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
+
+	}
+	if len(u.ID) == 0 {
+		return c.JSON(400, ErrorJson(errors.New("empty user id")))
 	}
 
-	res, err := r.userService.GetUserWithFeatures(c.Request().Context(), &u)
+	user, err := r.userService.GetUserWithFeatures(c.Request().Context(), &u)
 	if err != nil {
 		return c.JSON(400, ErrorJson(err))
 	}
-	if res.Features == nil {
-		res.Features = []model.Feature{}
+
+	resp := model.UserWithFeaturesResponse{
+		ID:       user.ID,
+		Features: []model.FeatureSlugAndExpire{},
 	}
-	return c.JSON(200, res)
+	for _, f := range user.Features {
+		resp.Features = append(resp.Features, model.FeatureSlugAndExpire{
+			Slug:      f.Slug,
+			ExpiresAt: f.ExpiresAt,
+		})
+	}
+	return c.JSON(200, resp)
 }
