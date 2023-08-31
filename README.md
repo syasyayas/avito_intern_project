@@ -28,10 +28,11 @@ Swagger доступен в браузере при запущенном кон�
 
 `curl --location 'localhost:80/healthcheck'`
 
+
 **Создание пользователя**
 
 Запрос:
-```http request
+```
 curl -i --location 'localhost:80/v1/user' \
 --header 'Content-Type: application/json' \
 --data '{"id": "123456"}'
@@ -49,7 +50,7 @@ Content-Length: 0
 **Получение пользователя и его сегментов**
 
 Request:
-```http request
+```
 curl --location --request GET 'localhost:80/v1/user' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -90,7 +91,7 @@ Response:
 **Удаление пользователя**
 
 Request:
-```http request
+```
 curl --location --request DELETE 'localhost:80/v1/user' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -110,7 +111,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location 'localhost:80/v1/feature' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -130,7 +131,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location 'localhost:80/v1/feature' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -152,7 +153,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location --request DELETE 'localhost:80/v1/feature' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -172,7 +173,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location 'localhost:80/v1/feature/features' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -201,7 +202,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location --request DELETE 'localhost:80/v1/feature/features' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -228,7 +229,7 @@ Content-Length: 0
 
 Request:
 
-```http request
+```
 curl --location --request GET 'localhost:80/v1/history/export' \
 --header 'Content-Type: application/json' \
 --data '{
